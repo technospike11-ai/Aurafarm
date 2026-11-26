@@ -86,11 +86,25 @@ function sendForceAuth() {
       bot.chat(`/login ${CONFIG.password}`);
       console.log('Force sent: /login');
     } catch {}
-  }, 5000);
+  }, 4500);
+
+  setTimeout(() => {
+    try {
+      bot.chat('/server main');
+      console.log('Force sent: /server main (Attempt 1)');
+    } catch {}
+  }, 8000);
+
+  setTimeout(() => {
+    try {
+      bot.chat('/server main');
+      console.log('Force sent: /server main (Attempt 2)');
+    } catch {}
+  }, 12500);
 }
 
 bot.on('login', () => {
-  console.log('Server login packet received! Force login in 5s...');
+  console.log('Server login packet received! Force auth + /server main start...');
   sendForceAuth();
 });
 
@@ -195,7 +209,8 @@ bot.on('spawn', () => {
 
   console.log('Bot bluemc.org par spawn aur ready hai (Auto-Roam ON)!');
 });
-  function getItemTier(itemName) {
+
+function getItemTier(itemName) {
   if (!itemName) return 0;
   const name = itemName.toLowerCase();
   const tier2Items = [
@@ -346,8 +361,9 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
     } catch {}
     isBusy = false;
   });
-                        }
- function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
+}
+
+function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
   return new Promise((resolve) => {
     let handled = false;
     const onWindowOpen = async (window) => {
@@ -532,7 +548,7 @@ async function checkOwnerAndRun(username, message) {
   } else if (cmd === '!slot' && args[1] && bot.currentWindow) await bot.clickWindow(parseInt(args[1]), 0, 0);
   else if (cmd === '!break') { const l = parseInt(args[1]), h = parseInt(args[2]), w = parseInt(args[3]); if (l > 0 && h > 0 && w > 0) breakCubeArea(l, h, w, username); }
   else if (cmd === '!stop') { stopRequested = true; isMiningCube = false; isBusy = false; offlineMode = false; clearInterval(farmInterval); farmInterval = null; bot.pathfinder.setGoal(null); bot.stopDigging(); bot.chat(`/msg ${username} Sab rok diya!`); }
-  else if (cmd === '!inv' || cmd === '!inventory') bot.chat(`/msg ${username} [inventory]`);
+    else if (cmd === '!inv' || cmd === '!inventory') bot.chat(`/msg ${username} [inventory]`);
   else if (cmd === '!ec') storeInEnderChest(true, username);
   else if (cmd === '!openec') openEnderChestOnly(username);
   else if (cmd === '!get' && args[1]) getItemFromEC(args[1], args[2] ? parseInt(args[2]) : null, username);
@@ -583,4 +599,4 @@ bot.on('chat', checkOwnerAndRun);
 bot.on('whisper', checkOwnerAndRun);
 bot.on('kicked', (reason) => console.log('Kicked:', reason));
 bot.on('error', (err) => console.log('Error:', err));
-    
+  
