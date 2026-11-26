@@ -67,7 +67,7 @@ const bot = mineflayer.createBot({
 bot.loadPlugin(pathfinder);
 
 let mode = 'auto';
-let offlineMode = false;
+let offlineMode = true;
 let isBusy = false;
 let isDodging = false;
 let isMiningCube = false;
@@ -201,6 +201,13 @@ bot.on('spawn', () => {
   bot.pathfinder.setMovements(defaultMove);
   isBusy = false;
 
+  if (!fs.existsSync(ZONES_FILE)) {
+    const p = bot.entity.position.floored();
+    zones.safeZone = { x: p.x, y: p.y, z: p.z };
+    zones.unsafeZone = { x: p.x, y: p.y, z: p.z };
+    saveZones();
+  }
+
   if (!invListenerAttached && bot.inventory) {
     invListenerAttached = true;
     bot.inventory.on('updateSlot', (slot, oldItem, newItem) => {
@@ -210,9 +217,9 @@ bot.on('spawn', () => {
     });
   }
 
-  console.log('Bot bluemc.org par spawn aur ready hai!');
+  console.log('Bot bluemc.org par spawn aur ready hai (Auto-Roam ON)!');
 });
-      function getItemTier(itemName) {
+function getItemTier(itemName) {
   if (!itemName) return 0;
   const name = itemName.toLowerCase();
   const tier2Items = [
@@ -363,8 +370,8 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
     } catch {}
     isBusy = false;
   });
-    }
-function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
+}
+  function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
   return new Promise((resolve) => {
     let handled = false;
     const onWindowOpen = async (window) => {
@@ -563,9 +570,25 @@ async function checkOwnerAndRun(username, message) {
   else if (cmd === '!eat') {
     const f = bot.inventory.items().find((i) => ['golden_apple', 'enchanted_golden_apple', 'cooked_beef', 'cooked_porkchop', 'golden_carrot', 'bread', 'cooked_chicken'].some((x) => i.name.includes(x)));
     if (f) { await bot.equip(f, 'hand'); await bot.consume(); }
-  } else if (cmd === '!come') { const o = bot.players[username]?.entity; if (o) bot.pathfinder.setGoal(new GoalNear(o.position.x, o.position.y, o.position.z, 2)); }
-  else if (cmd === '!follow') { const o = bot.players[username]?.entity; if (o) bot.pathfinder.setGoal(new GoalFollow(o, 2), true); }
-  else if (cmd === '!unfollow') bot.pathfinder.setGoal(null);
+  } else if (cmd === '!come') {
+    offlineMode = false;
+    const o = bot.players[username]?.entity;
+    if (o) {
+      bot.pathfinder.setGoal(new GoalNear(o.position.x, o.position.y, o.position.z, 2));
+      bot.chat(`/msg ${username} Aa raha hoon!`);
+    } else {
+      bot.chat(`/msg ${username} Tum paas nahi dikh rahe! /tpahere SpicyLoot_99 bhejo.`);
+    }
+  } else if (cmd === '!follow') {
+    offlineMode = false;
+    const o = bot.players[username]?.entity;
+    if (o) {
+      bot.pathfinder.setGoal(new GoalFollow(o, 2), true);
+      bot.chat(`/msg ${username} Ab tumhe follow kar raha hoon! Wapas auto-roam ke liye !offline likhna.`);
+    } else {
+      bot.chat(`/msg ${username} Tum render distance mein nahi ho!`);
+    }
+  } else if (cmd === '!unfollow') bot.pathfinder.setGoal(null);
   else if (cmd === '!spawn') goToSafeZone(() => bot.chat(`/msg ${username} Safe zone aa gaya.`));
   else if (cmd === '!tpa') bot.chat(`/tpa ${args[1] || username}`);
   else if (cmd === '!tpaccept') bot.chat('/tpaccept');
