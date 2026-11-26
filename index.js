@@ -83,21 +83,14 @@ let activeOwner = CONFIG.owners[0];
 function sendForceAuth() {
   setTimeout(() => {
     try {
-      bot.chat(`/register ${CONFIG.password} ${CONFIG.password}`);
-      console.log('Force sent: /register');
-    } catch {}
-  }, 1500);
-
-  setTimeout(() => {
-    try {
       bot.chat(`/login ${CONFIG.password}`);
       console.log('Force sent: /login');
     } catch {}
-  }, 3500);
+  }, 5000);
 }
 
 bot.on('login', () => {
-  console.log('Server login packet received! Force auth start...');
+  console.log('Server login packet received! Force login in 5s...');
   sendForceAuth();
 });
 
@@ -202,7 +195,7 @@ bot.on('spawn', () => {
 
   console.log('Bot bluemc.org par spawn aur ready hai (Auto-Roam ON)!');
 });
-function getItemTier(itemName) {
+  function getItemTier(itemName) {
   if (!itemName) return 0;
   const name = itemName.toLowerCase();
   const tier2Items = [
@@ -353,8 +346,8 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
     } catch {}
     isBusy = false;
   });
-                                      }
-    function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
+                        }
+ function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
   return new Promise((resolve) => {
     let handled = false;
     const onWindowOpen = async (window) => {
@@ -590,4 +583,4 @@ bot.on('chat', checkOwnerAndRun);
 bot.on('whisper', checkOwnerAndRun);
 bot.on('kicked', (reason) => console.log('Kicked:', reason));
 bot.on('error', (err) => console.log('Error:', err));
-      
+    
