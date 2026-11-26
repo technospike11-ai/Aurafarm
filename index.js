@@ -29,7 +29,6 @@ function isOwner(name) {
   return CONFIG.owners.includes(name);
 }
 
-const AUTH_FILE = './auth_state.json';
 const ZONES_FILE = './zones.json';
 const COMBAT_DURATION_MS = 22500;
 
@@ -77,50 +76,33 @@ let inCombat = false;
 let combatEndTime = 0;
 let strafeInterval = null;
 let farmInterval = null;
-let authDoneThisSession = false;
 let cleaningTrash = false;
 let invListenerAttached = false;
 let activeOwner = CONFIG.owners[0];
 
-function isAlreadyRegistered() {
-  if (!fs.existsSync(AUTH_FILE)) return false;
-  try {
-    return JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8')).registered === true;
-  } catch {
-    return false;
-  }
-}
+function sendForceAuth() {
+  setTimeout(() => {
+    try {
+      bot.chat(`/register ${CONFIG.password} ${CONFIG.password}`);
+      console.log('Force sent: /register');
+    } catch {}
+  }, 1500);
 
-function markAsRegistered() {
-  fs.writeFileSync(AUTH_FILE, JSON.stringify({ registered: true }));
+  setTimeout(() => {
+    try {
+      bot.chat(`/login ${CONFIG.password}`);
+      console.log('Force sent: /login');
+    } catch {}
+  }, 3500);
 }
 
 bot.on('login', () => {
-  authDoneThisSession = false;
-  console.log('Server login packet received!');
+  console.log('Server login packet received! Force auth start...');
+  sendForceAuth();
 });
 
 bot.on('messagestr', (message) => {
   console.log('[CHAT]', message);
-  if (authDoneThisSession) return;
-  const msg = message.toLowerCase();
-  if (msg.includes('/register')) {
-    authDoneThisSession = true;
-    setTimeout(() => {
-      bot.chat(`/register ${CONFIG.password} ${CONFIG.password}`);
-      markAsRegistered();
-    }, 1500);
-  } else if (msg.includes('/login') || msg.includes('password')) {
-    authDoneThisSession = true;
-    setTimeout(() => {
-      if (!isAlreadyRegistered()) {
-        bot.chat(`/register ${CONFIG.password} ${CONFIG.password}`);
-        markAsRegistered();
-      } else {
-        bot.chat(`/login ${CONFIG.password}`);
-      }
-    }, 1500);
-  }
 });
 
 function triggerCombatState() {
@@ -220,7 +202,7 @@ bot.on('spawn', () => {
 
   console.log('Bot bluemc.org par spawn aur ready hai (Auto-Roam ON)!');
 });
-  function getItemTier(itemName) {
+function getItemTier(itemName) {
   if (!itemName) return 0;
   const name = itemName.toLowerCase();
   const tier2Items = [
@@ -371,7 +353,8 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
     } catch {}
     isBusy = false;
   });
-}function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
+                                      }
+    function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
   return new Promise((resolve) => {
     let handled = false;
     const onWindowOpen = async (window) => {
@@ -608,4 +591,3 @@ bot.on('whisper', checkOwnerAndRun);
 bot.on('kicked', (reason) => console.log('Kicked:', reason));
 bot.on('error', (err) => console.log('Error:', err));
       
-  
