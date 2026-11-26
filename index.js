@@ -3,6 +3,7 @@ const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { GoalNear, GoalBlock, GoalInvert, GoalFollow } = goals;
 const fs = require('fs');
+const { Vec3 } = require('vec3');
 
 http.createServer((req, res) => {
   res.writeHead(200);
@@ -219,7 +220,7 @@ bot.on('spawn', () => {
 
   console.log('Bot bluemc.org par spawn aur ready hai (Auto-Roam ON)!');
 });
-function getItemTier(itemName) {
+  function getItemTier(itemName) {
   if (!itemName) return 0;
   const name = itemName.toLowerCase();
   const tier2Items = [
@@ -271,7 +272,7 @@ async function storeInEnderChest(sendTag = false, replyTo = activeOwner) {
   bot.pathfinder.setGoal(new GoalNear(x, y, z, 2));
   bot.once('goal_reached', async () => {
     try {
-      const ecBlock = bot.blockAt(bot.vec3(x, y, z));
+      const ecBlock = bot.blockAt(new Vec3(x, y, z));
       if (!ecBlock || !ecBlock.name.includes('ender_chest')) {
         bot.chat(`/msg ${replyTo} Ender Chest nahi mila! EC ke paas khade hokar !setec likho.`);
         isBusy = false;
@@ -309,7 +310,7 @@ async function openEnderChestOnly(replyTo = activeOwner) {
   bot.pathfinder.setGoal(new GoalNear(x, y, z, 2));
   bot.once('goal_reached', async () => {
     try {
-      const ecBlock = bot.blockAt(bot.vec3(x, y, z));
+      const ecBlock = bot.blockAt(new Vec3(x, y, z));
       if (!ecBlock || !ecBlock.name.includes('ender_chest')) {
         bot.chat(`/msg ${replyTo} Ender Chest nahi mila! Pehle !setec likho.`);
         isBusy = false;
@@ -329,7 +330,7 @@ async function withdrawAllAndDrop(replyTo = activeOwner) {
   bot.pathfinder.setGoal(new GoalNear(x, y, z, 2));
   bot.once('goal_reached', async () => {
     try {
-      const ecBlock = bot.blockAt(bot.vec3(x, y, z));
+      const ecBlock = bot.blockAt(new Vec3(x, y, z));
       await bot.lookAt(ecBlock.position.offset(0.5, 0.5, 0.5));
       const chest = await bot.openContainer(ecBlock);
       for (const item of chest.containerItems()) {
@@ -355,7 +356,7 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
   bot.pathfinder.setGoal(new GoalNear(x, y, z, 2));
   bot.once('goal_reached', async () => {
     try {
-      const ecBlock = bot.blockAt(bot.vec3(x, y, z));
+      const ecBlock = bot.blockAt(new Vec3(x, y, z));
       await bot.lookAt(ecBlock.position.offset(0.5, 0.5, 0.5));
       const chest = await bot.openContainer(ecBlock);
       const target = chest.containerItems().find((i) => i.name.toLowerCase().includes(itemName.toLowerCase()));
@@ -370,8 +371,7 @@ async function getItemFromEC(itemName, count, replyTo = activeOwner) {
     } catch {}
     isBusy = false;
   });
-}
-  function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
+}function runCommandAndClickGUI(serverCommand, targetItemKeyword, index = 1, replyTo = activeOwner) {
   return new Promise((resolve) => {
     let handled = false;
     const onWindowOpen = async (window) => {
@@ -449,46 +449,48 @@ async function breakCubeArea(l, h, w, replyTo = activeOwner) {
 }
 
 bot.on('physicsTick', () => {
-  if (inCombat || isMiningCube) return;
+  try {
+    if (!bot.entity || inCombat || isMiningCube) return;
 
-  const threat = bot.nearestEntity((e) => e.type === 'player' && e.username !== bot.username && !isOwner(e.username) && bot.entity.position.distanceTo(e.position) <= CONFIG.dodgeDistance);
-  if (threat) {
-    isDodging = true;
-    bot.pathfinder.setGoal(new GoalInvert(new GoalNear(threat.position.x, threat.position.y, threat.position.z, CONFIG.dodgeDistance + 2)), true);
-    return;
-  } else if (isDodging) {
-    isDodging = false;
-    bot.pathfinder.setGoal(null);
-  }
-
-  if (isBusy) return;
-
-  if (hasValuableLoot()) {
-    goToSafeZone(() => {
-      if (mode === 'auto' || offlineMode) storeInEnderChest(false, activeOwner);
-      else bot.chat(`/msg ${activeOwner} Loot aa gaya! !drop likho.`);
-    });
-    return;
-  }
-
-  const drop = bot.nearestEntity((e) => {
-    if (e.name !== 'item') return false;
-    const d = e.getDroppedItem();
-    return d && getItemTier(d.name) > 0 && bot.entity.position.distanceTo(e.position) < 30;
-  });
-  if (drop) {
-    bot.pathfinder.setGoal(new GoalNear(drop.position.x, drop.position.y, drop.position.z, 1));
-    return;
-  }
-
-  if (offlineMode) {
-    const { x, y, z } = zones.unsafeZone;
-    const dist = bot.entity.position.distanceTo(bot.vec3(x, y, z));
-    if (dist > 18) bot.pathfinder.setGoal(new GoalNear(x, y, z, 3));
-    else if (!bot.pathfinder.isMoving()) {
-      bot.pathfinder.setGoal(new GoalNear(x + Math.floor(Math.random() * 21) - 10, y, z + Math.floor(Math.random() * 21) - 10, 1));
+    const threat = bot.nearestEntity((e) => e.type === 'player' && e.username !== bot.username && !isOwner(e.username) && bot.entity.position.distanceTo(e.position) <= CONFIG.dodgeDistance);
+    if (threat) {
+      isDodging = true;
+      bot.pathfinder.setGoal(new GoalInvert(new GoalNear(threat.position.x, threat.position.y, threat.position.z, CONFIG.dodgeDistance + 2)), true);
+      return;
+    } else if (isDodging) {
+      isDodging = false;
+      bot.pathfinder.setGoal(null);
     }
-  }
+
+    if (isBusy) return;
+
+    if (hasValuableLoot()) {
+      goToSafeZone(() => {
+        if (mode === 'auto' || offlineMode) storeInEnderChest(false, activeOwner);
+        else bot.chat(`/msg ${activeOwner} Loot aa gaya! !drop likho.`);
+      });
+      return;
+    }
+
+    const drop = bot.nearestEntity((e) => {
+      if (e.name !== 'item') return false;
+      const d = e.getDroppedItem();
+      return d && getItemTier(d.name) > 0 && bot.entity.position.distanceTo(e.position) < 30;
+    });
+    if (drop) {
+      bot.pathfinder.setGoal(new GoalNear(drop.position.x, drop.position.y, drop.position.z, 1));
+      return;
+    }
+
+    if (offlineMode) {
+      const { x, y, z } = zones.unsafeZone;
+      const dist = bot.entity.position.distanceTo(new Vec3(x, y, z));
+      if (dist > 18) bot.pathfinder.setGoal(new GoalNear(x, y, z, 3));
+      else if (!bot.pathfinder.isMoving()) {
+        bot.pathfinder.setGoal(new GoalNear(x + Math.floor(Math.random() * 21) - 10, y, z + Math.floor(Math.random() * 21) - 10, 1));
+      }
+    }
+  } catch {}
 });
 
 async function checkOwnerAndRun(username, message) {
@@ -594,7 +596,7 @@ async function checkOwnerAndRun(username, message) {
   else if (cmd === '!tpaccept') bot.chat('/tpaccept');
   else if (cmd === '!warp' && args[1]) bot.chat(`/warp ${args[1]}`);
   else if (cmd === '!kit' && args[1]) bot.chat(`/kit ${args[1]}`);
-  else if (cmd === '!look' && args.length >= 4) bot.lookAt(bot.vec3(parseFloat(args[1]), parseFloat(args[2]), parseFloat(args[3])));
+  else if (cmd === '!look' && args.length >= 4) bot.lookAt(new Vec3(parseFloat(args[1]), parseFloat(args[2]), parseFloat(args[3])));
   else if (cmd === '!say' && args.length > 1) bot.chat(text.slice(5));
   else if (cmd === '!status') { const p = bot.entity.position.floored(); bot.chat(`/msg ${username} HP:${Math.round(bot.health)} Food:${bot.food} Pos:${p.x},${p.y},${p.z} Offline:${offlineMode}`); }
   else if (cmd === '!mode' && (args[1] === 'auto' || args[1] === 'hold')) { mode = args[1]; bot.chat(`/msg ${username} Mode: ${mode.toUpperCase()}`); }
@@ -605,4 +607,5 @@ bot.on('chat', checkOwnerAndRun);
 bot.on('whisper', checkOwnerAndRun);
 bot.on('kicked', (reason) => console.log('Kicked:', reason));
 bot.on('error', (err) => console.log('Error:', err));
-        
+      
+  
